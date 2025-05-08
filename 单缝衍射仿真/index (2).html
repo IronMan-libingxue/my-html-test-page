@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>单缝衍射实验模拟演示</title>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<style>
+    body {
+        font-family: "Microsoft YaHei", "Segoe UI", "SimSun", Arial, sans-serif; /* Added Segoe UI for better rendering on some systems */
+        margin: 0;
+        padding: 0;
+        background-color: #f4f7f6; /* Slightly softer background */
+        color: #333;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .main-title {
+        background-color: #0056b3; /* Kept blue for consistency */
+        color: white;
+        padding: 18px 0; /* Slightly more padding */
+        width: 100%;
+        text-align: center;
+        font-size: 1.9em; /* Slightly larger */
+        margin-bottom: 25px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .content-wrapper {
+        display: flex;
+        flex-direction: row;
+        width: 95%;
+        max-width: 1450px; /* Increased max-width for wider layout */
+        gap: 25px; /* Increased gap */
+    }
+    .controls-column {
+        width: 340px; /* Slightly wider controls */
+        flex-shrink: 0;
+    }
+    .simulation-column {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+    .panel {
+        background-color: #fff;
+        padding: 22px; /* Slightly more padding */
+        border-radius: 10px; /* More rounded corners */
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* Softer, more modern shadow */
+        margin-bottom: 25px;
+    }
+    .panel h2 {
+        color: #0056b3;
+        text-align: left;
+        margin-top: 0;
+        margin-bottom: 18px; /* More space after title */
+        font-size: 1.4em; /* Slightly larger panel titles */
+        border-bottom: 2px solid #eef2f5; /* Softer border color */
+        padding-bottom: 12px;
+    }
+    .controls-column .panel h2 {
+        text-align: center;
+    }
+    .controls-column label {
+        display: block;
+        margin-top: 15px;
+        margin-bottom: 5px;
+        font-weight: bold;
+        font-size: 1em; /* Standardized label size */
+    }
+    .controls-column input[type="range"] {
+        width: 100%;
+        margin-bottom: 5px;
+        background: #f0f0f0; /* Slider track color */
+        border-radius: 5px;
+        height: 8px;
+        -webkit-appearance: none;
+           -moz-appearance: none;
+                appearance: none;
+    }
+    .controls-column input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        background: #007bff; /* Brighter thumb color */
+        cursor: pointer;
+        border-radius: 50%;
+        border: 2px solid white;
+        box-shadow: 0 0 5px rgba(0,0,0,0.2);
+    }
+    .controls-column input[type="range"]::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        background: #007bff;
+        cursor: pointer;
+        border-radius: 50%;
+        border: 2px solid white;
+        box-shadow: 0 0 5px rgba(0,0,0,0.2);
+    }
+    .controls-column span.parameter-display { /* Target specific spans */
+        font-size: 0.95em;
+        color: #0056b3;
+        font-weight: bold;
+    }
+    #wavelengthColor {
+        width: calc(100% - 2px);
+        height: 30px; /* Taller color preview */
+        margin-top:8px;
+        border: 1px solid #ccc;
+        border-radius: 5px; /* Rounded border for color preview */
+    }
+    #diffractionCanvas {
+        width: 100%;
+        height: 280px; /* Increased height */
+        border: 1px solid #ced4da; /* Softer border */
+        background-color: #000;
+        margin-top: 12px;
+        border-radius: 6px; /* Rounded canvas */
+    }
+    .schematic-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        width: 100%;
+        padding: 20px 15px; /* Increased padding */
+        background-color: #e9f1f7; /* Lighter, slightly desaturated blue */
+        border-radius: 8px;
+        margin-bottom: 18px;
+        box-sizing: border-box;
+    }
+    .schematic-element {
+        text-align: center;
+        font-size: 0.9em; /* Standardized schematic text */
+        color: #33475b; /* Darker blue-grey for text */
+    }
+    .light-source-rep {
+        width: 45px; /* Slightly larger */
+        height: 65px;
+        border: 2px solid #adb5bd; /* Softer border */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 5px;
+        background-color: #FFEB3B;
+        color: #212529; /* Darker text for better contrast */
+        font-weight: bold;
+    }
+    .slit-barrier-rep {
+        width: 18px; /* Wider barrier */
+        height: 130px; /* Taller barrier */
+        background-color: #6c757d; /* Bootstrap secondary grey */
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 3px;
+        box-shadow: 1px 1px 4px rgba(0,0,0,0.15);
+    }
+    #slit-opening-rep {
+        background-color: #e9f1f7;
+        width: 100%;
+        position: absolute;
+    }
+    .screen-rep {
+        width: 30px; /* Wider screen */
+        height: 190px; /* Taller screen */
+        background-color: #dee2e6; /* Lighter grey screen */
+        border: 2px solid #adb5bd;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        color: #33475b;
+        font-weight: bold;
+    }
+    .distance-line {
+        flex-grow: 1;
+        height: 2.5px; /* Thicker line */
+        background-color: #5a6268; /* Darker line */
+        margin: 0 12px; /* Increased margin */
+        position: relative;
+    }
+    .distance-line::after {
+        content: attr(data-label);
+        position: absolute;
+        top: -22px; /* Adjust label position */
+        left: 50%;
+        transform: translateX(-50%);
+        font-style: italic;
+        font-size: 1em; /* Larger label */
+        color: #33475b;
+        background-color: #e9f1f7; /* Match background to avoid line cutting through text */
+        padding: 0 3px;
+    }
+    .principle-section {
+        line-height: 1.85; /* Slightly more line height */
+        font-size: 1em; /* Standardized font size */
+    }
+    .principle-section p, .principle-section ul {
+        margin-bottom: 1.2em; /* More space between paragraphs/lists */
+    }
+    .principle-section strong {
+        color: #0056b3;
+    }
+    .mjx-chtml { /* MathJax rendered font size */
+        font-size: 1.0em !important; /* Keep consistent with body text */
+    }
+</style>
+</head>
+<body>
+
+<div class="main-title">单缝衍射实验模拟演示</div>
+
+<div class="content-wrapper">
+    <div class="controls-column">
+        <div class="panel">
+            <h2>实验参数控制</h2>
+
+            <label for="wavelength">光波波长 (λ): <span id="wavelengthValue" class="parameter-display">632</span> nm</label>
+            <input type="range" id="wavelength" min="380" max="750" value="632" step="1">
+            <div id="wavelengthColor"></div>
+
+            <label for="slitWidth">单缝宽度 (a): <span id="slitWidthValue" class="parameter-display">100</span> µm</label>
+            <input type="range" id="slitWidth" min="10" max="300" value="100" step="1">
+
+            <label for="distanceToScreen">缝到屏距离 (L): <span id="distanceToScreenValue" class="parameter-display">1.00</span> m</label>
+            <input type="range" id="distanceToScreen" min="0.1" max="2.0" value="1.0" step="0.05">
+
+            <label for="lightIntensity">光强 (I₀ scale): <span id="lightIntensityValue" class="parameter-display">1.00</span></label>
+            <input type="range" id="lightIntensity" min="0.1" max="2.0" value="1.0" step="0.05">
+        </div>
+    </div>
+
+    <div class="simulation-column">
+        <div class="panel">
+            <h2>实验装置示意图</h2>
+            <div class="schematic-container">
+                <div class="schematic-element">
+                    <div id="schematicLightSource" class="light-source-rep">光</div>
+                    <div id="wavelengthLabelTextSchematic">λ = 632 nm</div>
+                </div>
+                <div class="distance-line" data-label=" "></div>
+                <div class="schematic-element">
+                    <div class="slit-barrier-rep">
+                        <div id="slit-opening-rep"></div>
+                    </div>
+                    <div id="slitWidthLabelTextSchematic">a = 100 µm</div>
+                </div>
+                <div class="distance-line" data-label="L"></div>
+                <div class="schematic-element">
+                    <div class="screen-rep">屏</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>衍射条纹模拟</h2>
+            <canvas id="diffractionCanvas"></canvas>
+        </div>
+    </div>
+</div>
+
+<div style="width: 95%; max-width: 1450px; margin-top: 0px; margin-bottom: 30px;">
+    <div class="panel principle-section">
+        <h2>实验原理说明</h2>
+        <p>单缝衍射是指光透过一个狭缝时，由于光的波动性而产生的衍射现象。根据惠更斯-菲涅耳原理，狭缝上的每一点都可以看作是一个新的波源，这些次级波在空间相干叠加形成衍射图样。</p>
+        <p>衍射条纹的强度分布可以用以下公式描述:
+        $$I = I_0 \left( \frac{\sin\beta}{\beta} \right)^2$$
+        其中：</p>
+        <ul>
+            <li>$I$ 是在屏幕上某一点的光强。</li>
+            <li>$I_0$ 是中央亮条纹中心的最大光强（在模拟中可通过“光强”参数调节其基准值）。</li>
+            <li>$\beta = \frac{\pi a \sin\theta}{\lambda}$</li>
+            <li>$a$ 是单缝的宽度。</li>
+            <li>$\lambda$ 是光的波长。</li>
+            <li>$\theta$ 是衍射角，即从单缝中心到屏幕上某点的连线与屏幕法线（光传播的主方向）之间的夹角。对于屏幕上距离中心点 $y$ 的位置，当屏幕距离 $L$ 远大于 $y$ 时，可以近似认为 $\sin\theta \approx \frac{y}{L}$。因此，$\beta \approx \frac{\pi a y}{\lambda L}$。</li>
+        </ul>
+        <p><strong>暗纹位置</strong>满足条件:
+        $$a \sin\theta = k\lambda \quad (k = \pm1, \pm2, \pm3, \dots)$$
+        或者近似为屏幕上的位置:
+        $$y_{\text{dark}} \approx \frac{k \lambda L}{a}$$
+        </p>
+        <p><strong>中央明纹</strong>的角宽度为 $\Delta\theta_0 = \frac{2\lambda}{a}$，其线宽度约为 $\Delta y_0 = \frac{2\lambda L}{a}$。它是其他各级明纹宽度的两倍，并且亮度远高于其他明纹。</p>
+    </div>
+</div>
+
+<script>
+    const wavelengthSlider = document.getElementById('wavelength');
+    const slitWidthSlider = document.getElementById('slitWidth');
+    const distanceToScreenSlider = document.getElementById('distanceToScreen');
+    const lightIntensitySlider = document.getElementById('lightIntensity');
+
+    const wavelengthValueSpan = document.getElementById('wavelengthValue');
+    const slitWidthValueSpan = document.getElementById('slitWidthValue');
+    const distanceToScreenValueSpan = document.getElementById('distanceToScreenValue');
+    const lightIntensityValueSpan = document.getElementById('lightIntensityValue');
+
+    const wavelengthColorDiv = document.getElementById('wavelengthColor');
+    const wavelengthLabelTextSchematicDiv = document.getElementById('wavelengthLabelTextSchematic');
+    const slitWidthLabelTextSchematicDiv = document.getElementById('slitWidthLabelTextSchematic');
+    const schematicLightSourceDiv = document.getElementById('schematicLightSource');
+    const schematicSlitOpeningDiv = document.getElementById('slit-opening-rep');
+
+    const canvas = document.getElementById('diffractionCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let wavelength_lambda = parseFloat(wavelengthSlider.value) * 1e-9; // m
+    let slitWidth_a = parseFloat(slitWidthSlider.value) * 1e-6;       // m (µm to m)
+    let distance_L = parseFloat(distanceToScreenSlider.value);         // m
+    let intensity_I0_scale = parseFloat(lightIntensitySlider.value);   // arb. unit
+
+    function resizeCanvas() {
+        const panelElement = canvas.parentElement;
+        if (panelElement) {
+            const cs = getComputedStyle(panelElement);
+            const paddingX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+            const newWidth = panelElement.clientWidth - paddingX - 2; // -2 for border
+             if (canvas.width !== newWidth) { // Only update if width actually changes
+                canvas.width = newWidth;
+             }
+        } else {
+             if (canvas.width !== 600) canvas.width = 600; // fallback
+        }
+        drawDiffractionPattern();
+    }
+
+    function wavelengthToRGB(wavelength_nm) {
+        let R, G, B;
+        if (wavelength_nm >= 380 && wavelength_nm < 440) { R = -(wavelength_nm - 440) / (440 - 380); G = 0.0; B = 1.0; }
+        else if (wavelength_nm >= 440 && wavelength_nm < 490) { R = 0.0; G = (wavelength_nm - 440) / (490 - 440); B = 1.0; }
+        else if (wavelength_nm >= 490 && wavelength_nm < 510) { R = 0.0; G = 1.0; B = -(wavelength_nm - 510) / (510 - 490); }
+        else if (wavelength_nm >= 510 && wavelength_nm < 580) { R = (wavelength_nm - 510) / (580 - 510); G = 1.0; B = 0.0; }
+        else if (wavelength_nm >= 580 && wavelength_nm < 645) { R = 1.0; G = -(wavelength_nm - 645) / (645 - 580); B = 0.0; }
+        else if (wavelength_nm >= 645 && wavelength_nm <= 750) { R = 1.0; G = 0.0; B = 0.0; }
+        else { R = 0.8; G = 0.8; B = 0.8; } // Light grey for out of range
+
+        let factor = 1.0;
+        if (wavelength_nm >= 380 && wavelength_nm < 420) factor = 0.3 + 0.7 * (wavelength_nm - 380) / (420 - 380);
+        else if (wavelength_nm > 700 && wavelength_nm <= 750) factor = 0.3 + 0.7 * (750 - wavelength_nm) / (750 - 700);
+        // Full intensity for mid-range
+        
+        const gamma = 0.80; // Standard gamma correction
+        const intensityMax = 255;
+
+        R = (R > 0) ? Math.round(intensityMax * Math.pow(R * factor, gamma)) : 0;
+        G = (G > 0) ? Math.round(intensityMax * Math.pow(G * factor, gamma)) : 0;
+        B = (B > 0) ? Math.round(intensityMax * Math.pow(B * factor, gamma)) : 0;
+        return { r: R, g: G, b: B };
+    }
+
+    function updateVisualsAndParameters() {
+        wavelength_lambda = parseFloat(wavelengthSlider.value) * 1e-9;
+        slitWidth_a = parseFloat(slitWidthSlider.value) * 1e-6;
+        distance_L = parseFloat(distanceToScreenSlider.value);
+        intensity_I0_scale = parseFloat(lightIntensitySlider.value);
+
+        const wl_nm = parseFloat(wavelengthSlider.value);
+        wavelengthValueSpan.textContent = wl_nm;
+        const colorObj = wavelengthToRGB(wl_nm);
+        const rgbString = `rgb(${colorObj.r},${colorObj.g},${colorObj.b})`;
+        wavelengthColorDiv.style.backgroundColor = rgbString;
+        schematicLightSourceDiv.style.backgroundColor = rgbString;
+
+        slitWidthValueSpan.textContent = slitWidthSlider.value;
+        distanceToScreenValueSpan.textContent = distance_L.toFixed(2);
+        lightIntensityValueSpan.textContent = intensity_I0_scale.toFixed(2);
+
+        // Update schematic text with plain text/Unicode, MathJax is not needed for these simple labels
+        wavelengthLabelTextSchematicDiv.textContent = `λ = ${wl_nm} nm`;
+        slitWidthLabelTextSchematicDiv.textContent = `a = ${slitWidthSlider.value} µm`;
+        
+        let schematicOpeningHeight = 80 - (parseFloat(slitWidthSlider.value) - 10) / (300 - 10) * 70;
+        schematicSlitOpeningDiv.style.height = `${Math.max(5, Math.min(80, schematicOpeningHeight))}px`;
+
+        drawDiffractionPattern();
+    }
+
+    function getIntensityAtPixel(canvasPixelX) {
+        if (slitWidth_a === 0 || distance_L === 0 || wavelength_lambda === 0 || canvas.width === 0) return 0;
+
+        const screenPhysicalWidth = 0.05; // meters (5 cm effective width on the screen being simulated)
+        const y_on_screen = (canvasPixelX - canvas.width / 2) * (screenPhysicalWidth / canvas.width);
+
+        if (y_on_screen === 0) {
+            return 1.0 * intensity_I0_scale;
+        }
+        const beta = (Math.PI * slitWidth_a * y_on_screen) / (wavelength_lambda * distance_L);
+        if (beta === 0) {
+            return 1.0 * intensity_I0_scale;
+        }
+        const relativeIntensity = Math.pow(Math.sin(beta) / beta, 2);
+        return relativeIntensity * intensity_I0_scale;
+    }
+
+    function drawDiffractionPattern() {
+        if (!ctx || canvas.width <= 0 || canvas.height <= 0) return; 
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const wl_nm_for_color = parseFloat(wavelengthSlider.value);
+        const baseColor = wavelengthToRGB(wl_nm_for_color);
+
+        for (let x = 0; x < canvas.width; x++) {
+            const intensity = getIntensityAtPixel(x);
+            const r = Math.min(255, Math.max(0, Math.round(baseColor.r * intensity)));
+            const g = Math.min(255, Math.max(0, Math.round(baseColor.g * intensity)));
+            const b = Math.min(255, Math.max(0, Math.round(baseColor.b * intensity)));
+
+            ctx.strokeStyle = `rgb(${r},${g},${b})`;
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, canvas.height);
+            ctx.stroke();
+        }
+    }
+
+    // Event Listeners
+    wavelengthSlider.addEventListener('input', updateVisualsAndParameters);
+    slitWidthSlider.addEventListener('input', updateVisualsAndParameters);
+    distanceToScreenSlider.addEventListener('input', updateVisualsAndParameters);
+    lightIntensitySlider.addEventListener('input', updateVisualsAndParameters);
+    
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(resizeCanvas, 100); // Debounce resize event
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        resizeCanvas(); 
+        updateVisualsAndParameters();
+        // MathJax will automatically typeset the document on load for elements it finds.
+    });
+
+</script>
+
+</body>
+</html>
